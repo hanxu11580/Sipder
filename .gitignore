@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# pycharm
+.idea
+
+
 # C extensions
 *.so
 
@@ -107,4 +111,4 @@ venv.bak/
 # mypy
 .mypy_cache/
 .dmypy.json
-dmypy.json
+dmypy.json.idea

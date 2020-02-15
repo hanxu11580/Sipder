@@ -67,11 +67,10 @@ def request_url(forecast_time, end_time):
 
 
 def data_handle(content_list):
+    air_zq_city = []
+    air_zq_forecast_data = []
     for content in content_list:
         if content is not None:
-            air_zq_city = []
-            air_zq_forecast_data = []
-
             js_pako, js_main = get_js()
             js = js_pako + js_main
             exec = execjs.compile(js)
@@ -94,10 +93,32 @@ def sql_insert(city_info, forecast_info):
     """
     cout1 = cout2 = 0
     conn, cursor = connect_db()
+    city_info = list(set(city_info))
 
     for city in city_info:
+        sql = "insert  into air_zq_city (province, city, longitude, latitude) values ('{}', '{}', '{}', '{}') on duplicate key update longitude=values (longitude), latitude=values (latitude)".format(city[0], city[1], city[2], city[3])
+        sql1 = "insert  into air_zq_city (province, city, longitude, latitude) values ('{}', '{}', '{}', '{}') on duplicate key update longitude=values (longitude), latitude=values (latitude)".format(city[0], city[1]+"市", city[2], city[3])
+        sql_area_code = "update air_zq_city zq join air_state_city state on state.city_name=\'{}\' set zq.area_code=state.unique_area_code where zq.city=\'{}\'".format(city[1],city[1])
+        sql_area_code1 = "update air_zq_city zq join air_state_city state on state.city_name=\'{}\' set zq.area_code=state.unique_area_code where zq.city=\'{}\'".format(city[1]+"市",city[1]+"市")
         print('air_zq_city插入中')
-        cursor.execute("insert  into air_zq_city (province, city, longitude, latitude) values ('{}', '{}', '{}', '{}') on duplicate key update longitude=values (longitude), latitude=values (latitude)".format(city[0], city[1], city[2],city[3]))
+        if '盟' in city[1] or '地区' in city[1]:
+            cursor.execute(sql)
+            cursor.execute(sql_area_code)
+
+        else:
+            if len(city[1]) >= 3 and '州' in city[1]:
+                cursor.execute(sql)
+                cursor.execute(sql_area_code)
+            else:
+                if city[1] == '克州' or city[1] == '博州' or city[1] == '巴州':
+                    cursor.execute(sql)
+                    cursor.execute(sql_area_code)
+                else:
+                    # 如果不是上面这几种情况那么直接加上 市
+                    cursor.execute(sql1)
+                    cursor.execute(sql_area_code1)
+
+
         conn.commit()
         cout1 += 1
 
@@ -105,19 +126,36 @@ def sql_insert(city_info, forecast_info):
         print('forecast插入中')
         if len(forecast) < 18:
             forecast.append(None)
-        cursor.execute("insert  into air_zq_city_forecast_data (forecast_time, province, city, temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,temp10,"
-                       "temp11,temp12,temp13,temp14,temp15) values ('{}', '{}', '{}', '{}','{}','{}','{}','{}','{}','{}',"
-                       "'{}','{}','{}','{}','{}','{}','{}','{}') on duplicate key update temp3=values (temp3), "
-                       "temp4=values (temp4), temp5=values (temp5), temp6=values (temp6), temp7=values (temp7), temp8=values (temp8), temp9=values (temp9), temp10=values (temp10),"
-                       "temp11=values (temp11), temp12=values (temp12), temp13=values (temp13), temp14=values (temp14), temp15=values (temp15)".format(
-            forecast[0], forecast[1], forecast[2], forecast[3], forecast[4], forecast[5],
-            forecast[6], forecast[7], forecast[8], forecast[9], forecast[10], forecast[11], forecast[12],
-            forecast[13], forecast[14], forecast[15], forecast[16], forecast[17]))
+
+        sql = "insert into air_zq_city_forecast_data (forecast_time, province, city, longitude,latitude,aqi,pm25,pm10,so2,no2,co,o3,temp10,temp11,temp12,temp13,temp14,temp15) values ('{}', '{}', '{}', '{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}') on duplicate key update aqi=values (aqi), pm25=values (pm25), pm10=values (pm10), so2=values (so2), no2=values (no2), co=values (co), o3=values (o3), temp10=values (temp10),temp11=values (temp11), temp12=values (temp12), temp13=values (temp13), temp14=values (temp14), temp15=values (temp15)".format(forecast[0], forecast[1], forecast[2], forecast[3], forecast[4], forecast[5],forecast[6], forecast[7], forecast[8], forecast[9], forecast[10], forecast[11], forecast[12],forecast[13], forecast[14], forecast[15], forecast[16], forecast[17])
+        sql1 = "insert into air_zq_city_forecast_data (forecast_time, province, city, longitude,latitude,aqi,pm25,pm10,so2,no2,co,o3,temp10,temp11,temp12,temp13,temp14,temp15) values ('{}', '{}', '{}', '{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}') on duplicate key update aqi=values (aqi), pm25=values (pm25), pm10=values (pm10), so2=values (so2), no2=values (no2), co=values (co), o3=values (o3), temp10=values (temp10),temp11=values (temp11), temp12=values (temp12), temp13=values (temp13), temp14=values (temp14), temp15=values (temp15)".format(forecast[0], forecast[1], forecast[2]+"市", forecast[3], forecast[4], forecast[5],forecast[6], forecast[7], forecast[8], forecast[9], forecast[10], forecast[11], forecast[12],forecast[13], forecast[14], forecast[15], forecast[16], forecast[17])
+        sql_area_code = "update air_zq_city_forecast_data zq join air_state_city state on state.city_name=\'{}\' set zq.area_code=state.unique_area_code where zq.city=\'{}\'".format(forecast[2],forecast[2])
+        sql_area_code1 = "update air_zq_city_forecast_data zq join air_state_city state on state.city_name=\'{}\' set zq.area_code=state.unique_area_code where zq.city=\'{}\'".format(forecast[2]+"市", forecast[2]+"市")
+        if '盟' in forecast[2] or '地区' in forecast[2]:
+            cursor.execute(sql)
+            cursor.execute(sql_area_code)
+
+        else:
+            if len(forecast[2]) >= 3 and '州' in forecast[2]:
+                cursor.execute(sql)
+                cursor.execute(sql_area_code)
+            else:
+                if forecast[2] == '克州' or forecast[2] == '博州' or forecast[2] == '巴州':
+                    cursor.execute(sql)
+                    cursor.execute(sql_area_code)
+                else:
+                    # 如果不是上面这几种情况那么直接加上 市
+                    cursor.execute(sql1)
+                    cursor.execute(sql_area_code1)
+
+
         conn.commit()
         cout2 += 1
+
+
     cursor.close()
-    print('>>>成功插入{}条数据(含更新)<<<'.format(cout1))
-    print('>>>成功插入{}条数据(含更新)<<<'.format(cout2))
+    print('>>>成功插入{}条city_info数据(含更新)<<<'.format(cout1))
+    print('>>>成功插入{}条forecast_info数据(含更新)<<<'.format(cout2))
 
 
 def spider(start_time=None, end_time=None):
@@ -130,6 +168,7 @@ def spider(start_time=None, end_time=None):
     content_list = request_url(start_time, end_time)
     city_info, forecast_info = data_handle(content_list)
     sql_insert(city_info, forecast_info)
+
 
 
 

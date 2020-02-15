@@ -27,11 +27,14 @@ if __name__ == '__main__':
     """
         每隔1小时，爬取一次5天数据
     """
-    scheduler = BackgroundScheduler()
-    # interval 时间间隔
-    scheduler.add_job(spider, 'interval', seconds=3600)
-    scheduler.start()
-    app.run()
+    # scheduler = BackgroundScheduler()
+    #     # # interval 时间间隔
+    #     # scheduler.add_job(spider, 'interval', seconds=3600)
+    #     # scheduler.start()
+    #     # app.run()
+
+    spider()
+
 
 
 
